@@ -15,7 +15,7 @@ let prefix = config.prefix;
 // profile of person
 let profile = require('./profile.json');
 
-// reading commands from commands folder
+/*// reading commands from commands folder
 fs.readdir('./commands/', (err, files) => {
     // if there is error, then it prints in console
     if (err) console.log(err);
@@ -31,7 +31,7 @@ fs.readdir('./commands/', (err, files) => {
         console.log(`${i + 1}. ${f} Uploaded!`);
         bot.commands.set(props.help.name, props);
     })
-});
+});*/
 
 bot.on('ready', () => {
   console.log(`${bot.user.username} was started`);
@@ -74,7 +74,123 @@ bot.on('message', async message => {
     // it's command
     let cmd = bot.commands.get(command.slice(prefix.length));
     // start command
-    if (cmd) cmd.run(bot, message, args);
+    switch (cmd) {
+        case 'ban':
+            try {
+                if (!message.member.hasPermission("BAN_MEMBERS")) {
+                    message.channel.send("You don't have permission.");
+                    break;
+                }
+
+                let rUser = message.guild.member(message.mentions.users.first() || args[0]);
+                let reason = args[1];
+        
+                if (!rUser) {
+                    message.channel.send("Invalid user ID"); 
+                    break;
+                }
+        
+                message.guild.member(rUser).ban(reason);
+                
+                delete(profile[rUser.id]);
+        
+                let embed = new Discord.MessageEmbed()
+                .setColor('#7289da')
+                .setDescription("Ban")
+                .addField("Administrator", message.author.username)
+                .addField("Banned", rUser.user.username)
+                .addField(`Reason: ${reason}`);
+
+                message.channel.send(embed);
+        
+            } catch(error) {
+                // name, message, stack
+                console.log(`1. ${error.name}\n2. ${error.message}\n3. ${error.stack}`);
+            }    
+            break;
+
+        case 'warn':
+            try {
+                if (!message.member.hasPermission("BAN_MEMBERS")) {
+                    message.channel.send("You don't have permission.");
+                    break;
+                }
+
+                let rUserID = message.guild.member(message.mentions.users.first() || args[0]);
+        
+                if (!rUserID) {
+                    message.channel.send("Invalid user ID");
+                    break;
+                } 
+        
+                profile[rUser.id].warns++;
+                fs.writeFile('./profile.json', JSON.stringify(profile), (err) => {
+                    if (err) console.log(err);
+                });
+        
+                if (profile[rUser.id].warns >= 3) {
+                    message.guild.member(rUser).ban("3/3 warns.");
+                }
+        
+                let embed = new Discord.MessageEmbed()
+                .setColor('#7289da')
+                .setDescription("Warn")
+                .addField("Administrator", message.author.username)
+                .addField("Gave warn to", rUser.user.username)
+                .addField(`Amount of warns: ${profile[rUser.id].warns}/3`);
+                message.channel.send(embed);
+        
+            } catch(error) {
+                // name, message, stack
+                console.log(`1. ${error.name}\n2. ${error.message}\n3. ${error.stack}`);
+            }    
+            break;
+
+        case 'unwarn':
+            try {
+                if (!message.member.hasPermission("BAN_MEMBERS")) {
+                    message.channel.send("You don't have permission.");
+                    break;
+                }
+
+                let rUser = message.guild.member(message.mentions.users.first() || args[0]);
+        
+                if (!rUser) { 
+                    message.channel.send("Invalid user ID"); 
+                    break; 
+                } 
+        
+                if (profile[rUser.id].warns <= 0) {
+                    message.channel.send("This user has already 0 warns.");
+                    break;
+                } 
+                else profile[rUser.id].warns--;
+                
+                fs.writeFile('./profile.json', JSON.stringify(profile), (err) => {
+                    if (err) console.log(err);
+                });
+        
+                let embed = new Discord.MessageEmbed()
+                .setColor('#7289da')
+                .setDescription("Warn")
+                .addField("Administrator", message.author.username)
+                .addField("Take warn from", rUser.user.username)
+                .addField(`Amount of warns: ${profile[rUser.id].warns}/3`);
+                message.channel.send(embed);
+        
+            } catch(error) {
+                // name, message, stack
+                console.log(`1. ${error.name}\n2. ${error.message}\n3. ${error.stack}`);
+            }    
+            break;
+
+        case 'ping':
+            message.channel.send(`Ping is ${Date.now() - message.createdTimestamp}ms (${message.author.username}).`);
+            break;
+
+        default:
+            message.channel.send("This command doesn't exist");
+    }
 });
 
 bot.login(token);
