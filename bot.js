@@ -14,24 +14,26 @@ let token = config.token;
 let prefix = config.prefix;
 // profile of person
 let profile = require('./profile.json');
+// logs
+let logs = './logs.log';
 
-/*// reading commands from commands folder
-fs.readdir('./commands/', (err, files) => {
-    // if there is error, then it prints in console
-    if (err) console.log(err);
-    // all files in commands folder
-    let jsFiles = files.filter(f => f.split(".").pop() === "js");
-    // if there is no files(commands), then it prints in console
-    if (jsFiles.length <= 0) console.log("There are no commands to upload!");
-    // info about how many commands was uploaded
-    console.log(`${jsFiles.length} command(s) were(was) uploaded`);
-    // find and set command
-    jsFiles.forEach((f, i) => {
-        let props = require(`./commands/${f}`);
-        console.log(`${i + 1}. ${f} Uploaded!`);
-        bot.commands.set(props.help.name, props);
-    })
-});*/
+let warnsToBan = 100;
+
+function warnLog(authorId, rUser) {
+    fs.appendFileSync(logs, `\nINFO | ${Date.now()} | ${authorId} warned ${rUser}`);
+}
+
+function banLog(authorId, rUser, reason) {
+    fs.appendFileSync(logs, `\nINFO | ${Date.now()} | ${authorId} banned ${rUser} | Reason: ${reason}`);
+}
+
+function errorLog(typeError, errorText) {
+    fs.appendFileSync(logs, `\nERROR | ${Date.now()} | ${typeError} ${errorText}`);
+}
+
+function unwarnLog(authorId, rUser) {
+    fs.appendFileSync(logs, `\nINFO | ${Date.now()} | ${authorId} unwarned ${rUser}`);
+}
 
 bot.on('ready', () => {
   console.log(`${bot.user.username} was started`);
@@ -71,11 +73,10 @@ bot.on('message', async message => {
     let args = messageArray.slice(1);
     // if command start not with prefix(!) then it does nothing
     if (!message.content.startsWith(prefix)) return;
-    // it's command
-    let cmd = bot.commands.get(command.slice(prefix.length));
+
     // start command
-    switch (cmd) {
-        case 'ban':
+    switch (command) {
+        case '!ban':
             try {
                 if (!message.member.hasPermission("BAN_MEMBERS")) {
                     message.channel.send("You don't have permission.");
@@ -102,23 +103,26 @@ bot.on('message', async message => {
                 .addField(`Reason: ${reason}`);
 
                 message.channel.send(embed);
+
+                banLog(authorId, rUser, reason);
         
             } catch(error) {
                 // name, message, stack
                 console.log(`1. ${error.name}\n2. ${error.message}\n3. ${error.stack}`);
+                errorLog(error.name, error.message);
             }    
             break;
 
-        case 'warn':
+        case '!warn':
             try {
                 if (!message.member.hasPermission("BAN_MEMBERS")) {
                     message.channel.send("You don't have permission.");
                     break;
                 }
 
-                let rUserID = message.guild.member(message.mentions.users.first() || args[0]);
+                let rUser = message.guild.member(message.mentions.users.first() || args[0]);
         
-                if (!rUserID) {
+                if (!rUser) {
                     message.channel.send("Invalid user ID");
                     break;
                 } 
@@ -128,8 +132,9 @@ bot.on('message', async message => {
                     if (err) console.log(err);
                 });
         
-                if (profile[rUser.id].warns >= 3) {
-                    message.guild.member(rUser).ban("3/3 warns.");
+                if (profile[rUser.id].warns >= warnsToBan) {
+                    message.guild.member(rUser).ban(`${profile[rUser.id].warns}/${warnsToBan}`);
+                    banLog(authorId, rUser, "${warnsToBan}/${warnsToBan} warns");
                 }
         
                 let embed = new Discord.MessageEmbed()
@@ -137,16 +142,18 @@ bot.on('message', async message => {
                 .setDescription("Warn")
                 .addField("Administrator", message.author.username)
                 .addField("Gave warn to", rUser.user.username)
-                .addField(`Amount of warns: ${profile[rUser.id].warns}/3`);
+                .addField(`Amount of warns: ${profile[rUser.id].warns}/${warnsToBan}`);
                 message.channel.send(embed);
+                warnLog(authorId, rUser);
         
             } catch(error) {
                 // name, message, stack
                 console.log(`1. ${error.name}\n2. ${error.message}\n3. ${error.stack}`);
-            }    
+                errorLog(error.name, error.message);
+            }
             break;
 
-        case 'unwarn':
+        case '!unwarn':
             try {
                 if (!message.member.hasPermission("BAN_MEMBERS")) {
                     message.channel.send("You don't have permission.");
@@ -175,17 +182,22 @@ bot.on('message', async message => {
                 .setDescription("Warn")
                 .addField("Administrator", message.author.username)
                 .addField("Take warn from", rUser.user.username)
-                .addField(`Amount of warns: ${profile[rUser.id].warns}/3`);
+                .addField(`Amount of warns: ${profile[rUser.id].warns}/${warnsToBan}`);
+
                 message.channel.send(embed);
+
+                unwarnLog(authorId, rUser);
         
             } catch(error) {
                 // name, message, stack
                 console.log(`1. ${error.name}\n2. ${error.message}\n3. ${error.stack}`);
+                errorLog(error.name, error.message);
             }    
             break;
 
-        case 'ping':
+        case '!ping':
             message.channel.send(`Ping is ${Date.now() - message.createdTimestamp}ms (${message.author.username}).`);
+            fs.appendFileSync(logs, `\nINFO | ${Date.now()} | ${authorId} want to know ping`);
             break;
 
         default:
