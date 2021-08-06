@@ -258,7 +258,7 @@ bot.on('message', async message => {
                 }
 
                 message.channel.bulkDelete(args[0]).then(() => {
-                    bot.send(`${args[0]} messages was deleted!`);
+                    message.channel.send(`${args[0]} messages was deleted!`);
                 });
             }
             catch(error) {
