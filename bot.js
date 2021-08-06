@@ -199,7 +199,6 @@ bot.on('message', async message => {
 
         case '!ping':
             message.channel.send(`Ping is ${Date.now() - message.createdTimestamp}ms (${message.author.username}).`);
-            fs.appendFileSync(logs, `\nINFO | ${Date.now()} | ${authorId} want to know ping`);
             break;
 
         case '!mute':
@@ -262,6 +261,7 @@ bot.on('message', async message => {
                 });
             }
             catch(error) {
+                console.log(`1. ${error.name}\n2. ${error.message}\n3. ${error.stack}`);
                 message.channel.send("Can't delete messages, which are more than 14 days");
                 errorLog(error.name, error.message);
             }
@@ -275,7 +275,7 @@ bot.on('message', async message => {
             .setDescription("Server Info")
             .addField("Server name is ", message.guild.name)
             .addField("Server exists since ", message.guild.createdAt)
-            .addField("You are on this server since ", message.guild.joinedAt)
+            .addField("Message was sended ", message.guild.joinedAt)
             .addField("Amount of members is ", message.guild.memberCount)
             .addField("Region is ", message.guild.region)
             .setThumbnail(message.guild.iconURL);
@@ -285,44 +285,55 @@ bot.on('message', async message => {
             break;
 
         case '!userinfo':
-            let user = args[0];
+            try {
+                let ruser = message.guild.member(message.mentions.users.first() || args[0]);
 
-            if (!user) {
-                user = authorId;
+                if (!ruser) {
+                    ruser = message.guild.member(authorId);
+                }
+
+                embed = new Discord.MessageEmbed()
+                .setColor('#7289da')
+                .setDescription("User Info")
+                .addField(`User name is`, ruser.user.username)
+                .addField(`User ID is`, ruser.id)
+                .addField(`Discriminator`, ruser.user.discriminator)
+                .addField(`User joined`, ruser.joinedTimestamp)
+                .addField(`This user is bot:`, ruser.user.bot)
+                .setThumbnail(ruser.avatarURL);
+
+                message.channel.send(embed);
             }
-            
-            embed = new Discord.MessageEmbed()
-            .setColor('#7289da')
-            .setDescription("User Info")
-            .addField("User name is ", user.username)
-            .addField("User tag is ", user.tag)
-            .addField("Discriminator ", user.discriminator)
-            .addField("User exists since ", user.createdAt)
-            .addField("User ID is ", user.id)
-            .addField("It's is ", user.bot)
-            .setThumbnail(message.guild.iconURL);
-
-            message.channel.send(embed);
+            catch(error) {
+                message.channel.send("Invalid user ID");
+                console.log(`1. ${error.name}\n2. ${error.message}\n3. ${error.stack}`);
+                errorLog(error.name, error.message);
+            }
 
             break;
 
         case '!unban':
-            if (!message.member.hasPermission("BAN_MEMBERS")) {
-                message.channel.send("You don't have permission.");
-                break;
+            try {
+                if (!message.member.hasPermission("BAN_MEMBERS")) {
+                    message.channel.send("You don't have permission.");
+                    break;
+                }
+                let rUser = message.guild.member(message.mentions.users.first() || args[0]);
+                if (!rUser) {
+                    message.channel.send("There is no pointer to user ID");
+                    break;
+                }
+                message.guild.members.unban(rUser.user);
+                embed = new Discord.MessageEmbed()
+                .setColor('#7289da')
+                .setDescription('Unban')
+                .addField("Administrator", message.author.username)
+                .addField("Unbanned", rUser.user.username);
+                fs.appendFileSync(logs, `INFO | ${Date.now()} | ${authorId} unbanned ${rUser}`);
+            }   
+            catch(error) {
+                errorLog(error.name, error.message);
             }
-            let rUser = message.guild.member(message.mentions.users.first() || args[0]);
-            if (!rUser) {
-                message.channel.send("There is no pointer to user ID");
-                break;
-            }
-            message.guild.members.unban(rUser.user);
-            embed = new Discord.MessageEmbed()
-            .setColor('#7289da')
-            .setDescription('Unban')
-            .addField("Administrator", message.author.username)
-            .addField("Unbanned", rUser.user.username);
-            fs.appendFileSync(logs, `INFO | ${Date.now()} | ${authorId} unbanned ${rUser}`);
             break;
 
         default:
