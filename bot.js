@@ -306,6 +306,25 @@ bot.on('message', async message => {
 
             break;
 
+        case '!unban':
+            if (!message.member.hasPermission("BAN_MEMBERS")) {
+                message.channel.send("You don't have permission.");
+                break;
+            }
+            let rUser = message.guild.member(message.mentions.users.first() || args[0]);
+            if (!rUser) {
+                message.channel.send("There is no pointer to user ID");
+                break;
+            }
+            message.guild.members.unban(rUser.user);
+            embed = new Discord.MessageEmbed()
+            .setColor('#7289da')
+            .setDescription('Unban')
+            .addField("Administrator", message.author.username)
+            .addField("Unbanned", rUser.user.username);
+            fs.appendFileSync(logs, `INFO | ${Date.now()} | ${authorId} unbanned ${rUser}`);
+            break;
+
         default:
             message.channel.send("This command doesn't exist");
     }
