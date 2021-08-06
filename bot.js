@@ -202,7 +202,7 @@ bot.on('message', async message => {
             fs.appendFileSync(logs, `\nINFO | ${Date.now()} | ${authorId} want to know ping`);
             break;
 
-        /*case '!mute':
+        case '!mute':
             try {
                 let rUser = message.guild.member(message.mentions.users.first() || args[0]);
                 let muterole = message.guild.roles.cache.find(role => role.name == "Muted");
@@ -238,7 +238,7 @@ bot.on('message', async message => {
                 console.log(`1. ${error.name}\n2. ${error.message}\n3. ${error.stack}`);
                 errorLog(error.name, error.message);
             }
-            break;*/
+            break;
 
         case '!clear':
             try {
