@@ -19,6 +19,8 @@ let logs = './logs.log';
 
 let warnsToBan = 100;
 
+let embed;
+
 function warnLog(authorId, rUser) {
     fs.appendFileSync(logs, `\nINFO | ${Date.now()} | ${authorId} warned ${rUser}`);
 }
@@ -95,7 +97,7 @@ bot.on('message', async message => {
                 
                 delete(profile[rUser.id]);
         
-                let embed = new Discord.MessageEmbed()
+                embed = new Discord.MessageEmbed()
                 .setColor('#7289da')
                 .setDescription("Ban")
                 .addField("Administrator", message.author.username)
@@ -137,7 +139,7 @@ bot.on('message', async message => {
                     banLog(authorId, rUser, "${warnsToBan}/${warnsToBan} warns");
                 }
         
-                let embed = new Discord.MessageEmbed()
+                embed = new Discord.MessageEmbed()
                 .setColor('#7289da')
                 .setDescription("Warn")
                 .addField("Administrator", message.author.username)
@@ -177,7 +179,7 @@ bot.on('message', async message => {
                     if (err) console.log(err);
                 });
         
-                let embed = new Discord.MessageEmbed()
+                embed = new Discord.MessageEmbed()
                 .setColor('#7289da')
                 .setDescription("Warn")
                 .addField("Administrator", message.author.username)
@@ -198,6 +200,110 @@ bot.on('message', async message => {
         case '!ping':
             message.channel.send(`Ping is ${Date.now() - message.createdTimestamp}ms (${message.author.username}).`);
             fs.appendFileSync(logs, `\nINFO | ${Date.now()} | ${authorId} want to know ping`);
+            break;
+
+        /*case '!mute':
+            try {
+                let rUser = message.guild.member(message.mentions.users.first() || args[0]);
+                let muterole = message.guild.roles.cache.find(role => role.name == "Muted");
+                rUser.roles.add(muterole);
+                embed = new Discord.MessageEmbed()
+                .setColor('#7289da')
+                .setDescription("Mute")
+                .addField("Administrator", message.author.username)
+                .addField("Muted", rUser.user.username);
+                message.channel.send(embed);
+                fs.appendFileSync(logs, `\nINFO | ${Date.now()} | ${authorId} muted ${rUser}`);
+            }
+            catch(error) {
+                console.log(`1. ${error.name}\n2. ${error.message}\n3. ${error.stack}`);
+                errorLog(error.name, error.message);
+            }
+            break;
+        
+        case '!unmute':
+            try {
+                let rUser = message.guild.member(message.mentions.users.first() || args[0]);
+                let muterole = message.guild.roles.cache.find(role => role.name == "Muted");
+                rUser.roles.remove(muterole);
+                embed = new Discord.MessageEmbed()
+                .setColor('#7289da')
+                .setDescription("Unmute")
+                .addField("Administrator", message.author.username)
+                .addField("Unmuted", rUser.user.username);
+                message.channel.send(embed);
+                fs.appendFileSync(logs, `\nINFO | ${Date.now()} | ${authorId} unmuted ${rUser}`);
+            }
+            catch(error) {
+                console.log(`1. ${error.name}\n2. ${error.message}\n3. ${error.stack}`);
+                errorLog(error.name, error.message);
+            }
+            break;*/
+
+        case '!clear':
+            try {
+                if (!message.member.hasPermission("MANAGE_MESSAGES")) {
+                    message.channel.send("You don't have permissions!");
+                    break;
+                }
+
+                if (args[0] > 100 || args[0] < 1) {
+                    message.channel.send("You can't delete more than 100 messages or less than 1.");
+                    break;
+                }
+
+                if (!args[0]) {
+                    message.channel.send("There is no pointer to amount of messages to delete.");
+                    break;
+                }
+
+                message.channel.bulkDelete(args[0]).then(() => {
+                    bot.send(`${args[0]} messages was deleted!`);
+                });
+            }
+            catch(error) {
+                message.channel.send("Can't delete messages, which are more than 14 days");
+                errorLog(error.name, error.message);
+            }
+
+            fs.appendFileSync(logs, `\nINFO | ${Date.now()} | ${authorId} deleted ${args[0]} last messages`);
+            break;
+
+        case '!serverinfo':
+            embed = new Discord.MessageEmbed()
+            .setColor('#7289da')
+            .setDescription("Server Info")
+            .addField("Server name is ", message.guild.name)
+            .addField("Server exists since ", message.guild.createdAt)
+            .addField("You are on this server since ", message.guild.joinedAt)
+            .addField("Amount of members is ", message.guild.memberCount)
+            .addField("Region is ", message.guild.region)
+            .setThumbnail(message.guild.iconURL);
+
+            message.channel.send(embed);
+
+            break;
+
+        case '!userinfo':
+            let user = args[0];
+
+            if (!user) {
+                user = authorId;
+            }
+            
+            embed = new Discord.MessageEmbed()
+            .setColor('#7289da')
+            .setDescription("User Info")
+            .addField("User name is ", user.username)
+            .addField("User tag is ", user.tag)
+            .addField("Discriminator ", user.discriminator)
+            .addField("User exists since ", user.createdAt)
+            .addField("User ID is ", user.id)
+            .addField("It's is ", user.bot)
+            .setThumbnail(message.guild.iconURL);
+
+            message.channel.send(embed);
+
             break;
 
         default:
