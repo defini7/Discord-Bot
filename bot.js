@@ -78,6 +78,16 @@ bot.on('message', async message => {
 
     // start command
     switch (command) {
+        case '!changemaxwarns':
+            if (!args[0]) {
+                message.channel.send("There is not amount of warns!");
+                break;
+            }
+            warnsToBan = args[0];
+            message.channel.send(`Amount of warns is now ${warnsToBan}`);
+            fs.appendFileSync(logs, `\nINFO | ${Date.now()} | ${authorId} changed amount of warns to ban to ${warnsToBan}`);
+            break;
+
         case '!ban':
             try {
                 if (!message.member.hasPermission("BAN_MEMBERS")) {
